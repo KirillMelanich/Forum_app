@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
+    'captcha',
     # local apps:
     "commentator",
     "user",
@@ -52,6 +53,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# REST_FRAMEWORK = {
+#     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+#     "DEFAULT_THROTTLE_CLASSES": [
+#         "rest_framework.throttling.AnonRateThrottle",
+#         "rest_framework.throttling.UserRateThrottle",
+#     ],
+#     "DEFAULT_THROTTLE_RATES": {"anon": "1000/day", "user": "3000/day", "loginAttempts": "3/hr"},
+#     "DEFAULT_AUTHENTICATION_CLASSES": (
+#         "rest_framework_simplejwt.authentication.JWTAuthentication",
+#     ),
+# }
+
+CAPTCHA_IMAGE_SIZE = (120, 40)
+CAPTCHA_FONT_SIZE = (24, 24)
+CAPTCHA_LENGTH = 6
 
 ROOT_URLCONF = 'forum.urls'
 
@@ -111,7 +128,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Kiev'
 
 USE_I18N = True
 

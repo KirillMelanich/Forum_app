@@ -1,3 +1,5 @@
+from captcha.models import CaptchaStore
+from rest_framework.exceptions import ValidationError
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +12,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def perform_create(self, serializer):
+        # Validate captcha only if the user is not an admin
+        if not self.request.user.is_staff:
+            captcha_value = self.request.data.get("captcha")
+            captcha_id = self.request.data.get("captcha_0")
+
+            if not CaptchaStore.objects.filter(response=captcha_value, hashkey=captcha_id).exists():
+                raise ValidationError({"captcha": "Invalid captcha."})
+
         serializer.save(author_id=self.request.user.id)
 
     @action(detail=True, methods=["post"])
@@ -31,6 +41,14 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
 
     def perform_create(self, serializer):
+        # Validate captcha only if the user is not an admin
+        if not self.request.user.is_staff:
+            captcha_value = self.request.data.get("captcha")
+            captcha_id = self.request.data.get("captcha_0")
+
+            if not CaptchaStore.objects.filter(response=captcha_value, hashkey=captcha_id).exists():
+                raise ValidationError({"captcha": "Invalid captcha."})
+
         serializer.save(author_id=self.request.user.id)
 
     @action(detail=True, methods=["post"])

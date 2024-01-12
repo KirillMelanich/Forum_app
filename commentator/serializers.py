@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from captcha.fields import CaptchaField
 from .models import Post, Comment
 
 
@@ -18,7 +19,7 @@ class FilterReviewListSerializer(serializers.ListSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-
+    captcha = CaptchaField()
     replies = RecursiveSerializer(many=True, required=False)
 
     class Meta:
@@ -27,6 +28,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "author",
+            "home_page",
             "post",
             "content",
             "created_at",
@@ -38,25 +40,40 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Conditionally include "parent_comment" and "replies" if not empty
+        # Conditionally include "parent_comment" and "replies" and "home_page" if not empty
         if not instance.parent_comment:
             representation.pop("parent_comment")
         if not instance.replies.exists():
             representation.pop("replies")
+        if not instance.home_page:
+            representation.pop("home_page", None)
 
         return representation
 
 
 class PostSerializer(serializers.ModelSerializer):
-
+    captcha = CaptchaField()
     author = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
-        fields = ["id", "author", "content", "created_at", "comments"]
+        fields = ("id", "author", "home_page", "content", "created_at", "comments")
         read_only_fields = ("comments", "author")
 
     @staticmethod
     def get_author(obj):
         return obj.author.id
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        # Conditionally exclude "comments" and "home_page" if empty or None
+        if not instance.comments.exists():
+            representation.pop("comments", None)
+
+        if not instance.home_page:
+            representation.pop("home_page", None)
+
+        return representation
+
