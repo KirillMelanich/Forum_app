@@ -66,10 +66,11 @@ class PostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     likes = serializers.SerializerMethodField()
     dislikes = serializers.SerializerMethodField()
+    num_of_comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ("id", "author", "home_page", "created_at", "content", "likes", "dislikes", "comments")
+        fields = ("id", "author", "home_page", "created_at", "content", "likes", "dislikes", "num_of_comments", "comments")
         read_only_fields = ("comments", "author")
 
     @staticmethod
@@ -83,6 +84,10 @@ class PostSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_author(obj):
         return obj.author.id
+
+    @staticmethod
+    def get_num_of_comments(obj):
+        return obj.comments.count()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
