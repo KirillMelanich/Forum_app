@@ -1,26 +1,13 @@
-from captcha.models import CaptchaStore
-from rest_framework.exceptions import ValidationError
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Post, Comment
+from .models import Post, Comment, Like, Dislike
 from .serializers import PostSerializer, CommentSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-
-    def perform_create(self, serializer):
-        # Validate captcha only if the user is not an admin
-        if not self.request.user.is_staff:
-            captcha_value = self.request.data.get("captcha")
-            captcha_id = self.request.data.get("captcha_0")
-
-            if not CaptchaStore.objects.filter(response=captcha_value, hashkey=captcha_id).exists():
-                raise ValidationError({"captcha": "Invalid captcha."})
-
-        serializer.save(author_id=self.request.user.id)
 
     @action(detail=True, methods=["post"])
     def reply(self, request, pk=None):
@@ -35,21 +22,63 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+    @action(detail=True, methods=["post"])
+    def like(self, request, pk=None):
+        comment = self.get_object()
+        user = request.user
+
+        # Check if the user has already disliked the comment
+        if Dislike.objects.filter(user=user, comment=comment).exists():
+            comment.likes -= 1
+            Dislike.objects.filter(user=user, comment=comment).delete()
+
+        # Check if the user has already liked the comment
+        elif Like.objects.filter(user=user, comment=comment).exists():
+            return Response(
+                {"detail": "You have already liked this comment before"},
+                status.HTTP_400_BAD_REQUEST
+            )
+
+        Like.objects.create(user=user, comment=comment)
+        comment.likes += 1
+        comment.save()
+
+        return Response(
+            {"detail": "Comment liked successfully."}, status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=["post"])
+    def dislike(self, request, pk=None):
+        comment = self.get_object()
+        user = request.user
+
+        # Check if the user has already liked the comment
+        if Like.objects.filter(user=user, comment=comment).exists():
+            comment.likes -= 1
+            Like.objects.filter(user=user, comment=comment).delete()
+
+        # Check if the user has already disliked the comment
+        elif Dislike.objects.filter(user=user, comment=comment).exists():
+            return Response(
+                {"detail": "You have already disliked this post before"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Dislike.objects.create(user=user, comment=comment)
+        comment.dislikes += 1
+        comment.save()
+
+        return Response(
+            {"detail": "Comment disliked successfully."}, status=status.HTTP_200_OK
+        )
+
+    def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)
+
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-
-    def perform_create(self, serializer):
-        # Validate captcha only if the user is not an admin
-        if not self.request.user.is_staff:
-            captcha_value = self.request.data.get("captcha")
-            captcha_id = self.request.data.get("captcha_0")
-
-            if not CaptchaStore.objects.filter(response=captcha_value, hashkey=captcha_id).exists():
-                raise ValidationError({"captcha": "Invalid captcha."})
-
-        serializer.save(author_id=self.request.user.id)
 
     @action(detail=True, methods=["post"])
     def comment(self, request, pk=None):
@@ -59,3 +88,56 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer.save(post=post, author=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+    @action(detail=True, methods=["post"])
+    def like(self, request, pk=None):
+        post = self.get_object()
+        user = request.user
+
+        # Check if the user has already disliked the post
+        if Dislike.objects.filter(user=user, post=post).exists():
+            post.dislikes -= 1
+            Dislike.objects.filter(user=user, post=post).delete()
+
+        # Check if the user has already liked the post
+        elif Like.objects.filter(user=user, post=post).exists():
+            return Response(
+                {"detail": "You have already liked this post before"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Like.objects.create(user=user, post=post)
+        post.likes += 1
+        post.save()
+
+        return Response(
+            {"detail": "Post liked successfully."}, status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=["post"])
+    def dislike(self, request, pk=None):
+        post = self.get_object()
+        user = request.user
+
+        # Check if user has already liked this post
+        if Like.objects.filter(user=user, post=post).exists():
+            post.likes -= 1
+            Like.objects.filter(user=user, post=post).delete()
+
+        # Check if user has already disliked this post
+        elif Dislike.objects.filter(user=user, post=post).exists():
+            return Response(
+                {"detail": "You have already disliked this post before"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Dislike.objects.create(user=user, post=post)
+        post.dislikes += 1
+        post.save()
+
+        return Response(
+            {"detail": "Post disliked successfully."}, status=status.HTTP_200_OK
+        )
+
+    def perform_create(self, serializer):
+        return serializer.save(author=self.request.user)

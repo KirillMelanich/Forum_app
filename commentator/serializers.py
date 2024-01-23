@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from captcha.fields import CaptchaField
 from .models import Post, Comment
 
 
@@ -19,8 +18,9 @@ class FilterReviewListSerializer(serializers.ListSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    captcha = CaptchaField()
     replies = RecursiveSerializer(many=True, required=False)
+    likes = serializers.SerializerMethodField()
+    dislikes = serializers.SerializerMethodField()
 
     class Meta:
         list_serializer_class = FilterReviewListSerializer
@@ -30,12 +30,22 @@ class CommentSerializer(serializers.ModelSerializer):
             "author",
             "home_page",
             "post",
-            "content",
             "created_at",
+            "content",
+            "likes",
+            "dislikes",
             "parent_comment",
             "replies",
         )
         read_only_fields = ("author",)
+
+    @staticmethod
+    def get_likes(obj):
+        return obj.get_likes_count()
+
+    @staticmethod
+    def get_dislikes(obj):
+        return obj.get_dislikes_count()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -52,14 +62,23 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    captcha = CaptchaField()
     author = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
+    likes = serializers.SerializerMethodField()
+    dislikes = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ("id", "author", "home_page", "content", "created_at", "comments")
+        fields = ("id", "author", "home_page", "created_at", "content", "likes", "dislikes", "comments")
         read_only_fields = ("comments", "author")
+
+    @staticmethod
+    def get_likes(obj):
+        return obj.get_likes_count()
+
+    @staticmethod
+    def get_dislikes(obj):
+        return obj.get_dislikes_count()
 
     @staticmethod
     def get_author(obj):
