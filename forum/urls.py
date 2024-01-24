@@ -24,6 +24,5 @@ urlpatterns = [
     path("api/user/", include("user.urls", namespace="user")),
     path("api/commentator/", include("commentator.urls", namespace="commentator")),
 ]
-
-# if settings.DEBUG:
-#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

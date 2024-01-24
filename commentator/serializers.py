@@ -12,6 +12,7 @@ class RecursiveSerializer(serializers.Serializer):
 
 class FilterReviewListSerializer(serializers.ListSerializer):
     """Lists comments only under parents comment"""
+
     def to_representation(self, data):
         data = data.filter(parent_comment=None)
         return super().to_representation(data)
@@ -28,9 +29,9 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "author",
-            "home_page",
             "post",
             "created_at",
+            "image",
             "content",
             "likes",
             "dislikes",
@@ -50,13 +51,13 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Conditionally include "parent_comment" and "replies" and "home_page" if not empty
+        # Conditionally include "parent_comment" and "replies" and "image" if not empty
         if not instance.parent_comment:
             representation.pop("parent_comment")
         if not instance.replies.exists():
             representation.pop("replies")
-        if not instance.home_page:
-            representation.pop("home_page", None)
+        if not instance.image:
+            representation.pop("image")
 
         return representation
 
@@ -70,7 +71,17 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ("id", "author", "home_page", "created_at", "content", "likes", "dislikes", "num_of_comments", "comments")
+        fields = (
+            "id",
+            "author",
+            "created_at",
+            "image",
+            "content",
+            "likes",
+            "dislikes",
+            "num_of_comments",
+            "comments",
+        )
         read_only_fields = ("comments", "author")
 
     @staticmethod
@@ -92,12 +103,10 @@ class PostSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Conditionally exclude "comments" and "home_page" if empty or None
+        # Conditionally exclude "comments" and "image" if empty or None
         if not instance.comments.exists():
             representation.pop("comments", None)
-
-        if not instance.home_page:
-            representation.pop("home_page", None)
+        if not instance.image:
+            representation.pop("image")
 
         return representation
-

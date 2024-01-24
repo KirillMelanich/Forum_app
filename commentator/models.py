@@ -1,5 +1,20 @@
+import os
+import uuid
+from django.utils.text import slugify
+
 from django.conf import settings
 from django.db import models
+
+
+def image_file_path(instance, filename):
+    """
+    Creates correct image path
+    """
+    _, extension = os.path.splitext(filename)
+
+    filename = f"{slugify(instance.created_at)}-{uuid.uuid4()}.{extension}"
+
+    return os.path.join("uploads/buses/", filename)
 
 
 class Post(models.Model):
@@ -7,9 +22,9 @@ class Post(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts"
     )
     email = models.EmailField(max_length=65, null=False, blank=False)
-    home_page = models.URLField(max_length=255, null=True, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     content = models.TextField(blank=False, null=False)
+    image = models.ImageField(null=True, upload_to=image_file_path)
     likes = models.PositiveIntegerField(default=0)
     dislikes = models.PositiveIntegerField(default=0)
 
@@ -35,11 +50,13 @@ class Post(models.Model):
 
 class Comment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    home_page = models.URLField(max_length=255, null=True, blank=False)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    image = models.ImageField(null=True, upload_to=image_file_path)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    parent_comment = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    parent_comment = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies"
+    )
     likes = models.PositiveIntegerField(default=0)
     dislikes = models.PositiveIntegerField(default=0)
 
@@ -60,20 +77,24 @@ class Comment(models.Model):
         return self.dislikes
 
     def __str__(self):
-        return f'{self.content[:12]}...by {self.author.email}'
+        return f"{self.content[:12]}...by {self.author.email}"
 
 
 class Like(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     post = models.ForeignKey("Post", on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.ForeignKey("Comment", on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.ForeignKey(
+        "Comment", on_delete=models.CASCADE, null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class Dislike(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     post = models.ForeignKey("Post", on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.ForeignKey("Comment", on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.ForeignKey(
+        "Comment", on_delete=models.CASCADE, null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
 

@@ -36,7 +36,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         elif Like.objects.filter(user=user, comment=comment).exists():
             return Response(
                 {"detail": "You have already liked this comment before"},
-                status.HTTP_400_BAD_REQUEST
+                status.HTTP_400_BAD_REQUEST,
             )
 
         Like.objects.create(user=user, comment=comment)
@@ -61,7 +61,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         elif Dislike.objects.filter(user=user, comment=comment).exists():
             return Response(
                 {"detail": "You have already disliked this post before"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         Dislike.objects.create(user=user, comment=comment)
@@ -103,7 +103,7 @@ class PostViewSet(viewsets.ModelViewSet):
         elif Like.objects.filter(user=user, post=post).exists():
             return Response(
                 {"detail": "You have already liked this post before"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         Like.objects.create(user=user, post=post)
@@ -128,7 +128,7 @@ class PostViewSet(viewsets.ModelViewSet):
         elif Dislike.objects.filter(user=user, post=post).exists():
             return Response(
                 {"detail": "You have already disliked this post before"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         Dislike.objects.create(user=user, post=post)
