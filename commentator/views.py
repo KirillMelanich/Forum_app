@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Post, Comment, Like, Dislike
-from .serializers import PostSerializer, CommentSerializer
+from .models import Post, Comment, Like, Dislike, Profile
+from .serializers import PostSerializer, CommentSerializer, ProfileSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -141,3 +141,21 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
+
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+
+    def perform_create(self, serializer):
+        # Set the user of the profile to the authenticated user making the request
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["put"])
+    def update_image(self, request, pk=None):
+        profile = self.get_object()
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

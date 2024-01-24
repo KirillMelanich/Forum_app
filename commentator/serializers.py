@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment
+from .models import Post, Comment, Profile, Like, Dislike
 
 
 class RecursiveSerializer(serializers.Serializer):
@@ -110,3 +110,53 @@ class PostSerializer(serializers.ModelSerializer):
             representation.pop("image")
 
         return representation
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    user_id = serializers.CharField(source="user.id", read_only=True)
+    user_name = serializers.CharField(source="user.full_name", read_only=True)
+    registrated_at = serializers.DateTimeField(read_only=True)
+    posts_made = serializers.SerializerMethodField()
+    comments_made = serializers.SerializerMethodField()
+    likes_given = serializers.SerializerMethodField()
+    dislikes_given = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = (
+            "user_id",
+            "user_name",
+            "image",
+            "registrated_at",
+            "last_activity",
+            "posts_made",
+            "comments_made",
+            "likes_given",
+            "dislikes_given",
+        )
+        read_only_fields = (
+            "user_id",
+            "user_name",
+            "registrated_at",
+            "last_activity",
+            "posts_made",
+            "comments_made",
+            "likes_given",
+            "dislikes_given",
+        )
+
+    @staticmethod
+    def get_posts_made(profile):
+        return Post.objects.filter(author=profile.user).count()
+
+    @staticmethod
+    def get_comments_made(profile):
+        return Comment.objects.filter(author=profile.user).count()
+
+    @staticmethod
+    def get_likes_given(profile):
+        return Like.objects.filter(user=profile.user).count()
+
+    @staticmethod
+    def get_dislikes_given(profile):
+        return Dislike.objects.filter(user=profile.user).count()
